@@ -19,6 +19,8 @@ import {
   Purchase
 } from '@/components/stocks'
 
+import { Meal } from '@/components/meals/meal'
+
 import { z } from 'zod'
 import { EventsSkeleton } from '@/components/stocks/events-skeleton'
 import { Events } from '@/components/stocks/events'
@@ -149,20 +151,23 @@ async function submitUserMessage(content: string) {
       {
         role: 'system',
         content: `\
-You are a stock trading conversation bot and you can help users buy stocks, step by step.
-You and the user can discuss stock prices and the user can adjust the amount of stocks they want to buy, or place an order, in the UI.
+You are a nutritous meal planner. You can provide meal plans for losing weight, gaining muscle, or for a family. You can also provide a weekly meal plan for gaining muscle. You can also provide a single day meal plan for gaining muscle.
 
 Messages inside [] means that it's a UI element or a user event. For example:
-- "[Price of AAPL = 100]" means that an interface of the stock price of AAPL is shown to the user.
-- "[User has changed the amount of AAPL to 10]" means that the user has changed the amount of AAPL to 10 in the UI.
+- "[I'm allergic to tree nuts]" means that the meal plan should remove or subsitute any ingredients or meals that include the stated allergy.
+- "[I am a vegetarian]" means that the user is a vegetarian and should adjust the meal plan to not include meat or any animal derived ingredients.
 
-If the user requests purchasing a stock, call \`show_stock_purchase_ui\` to show the purchase UI.
-If the user just wants the price, call \`show_stock_price\` to show the price.
-If you want to show trending stocks, call \`list_stocks\`.
-If you want to show events, call \`get_events\`.
-If the user wants to sell stock, or complete another impossible task, respond that you are a demo and cannot do that.
+If the user wants the nutrional information of a meal, call \`get_nutritional_info\` to get the information.
+If the user wants to know the ingredients of a meal, call \`get_ingredients\` to get the ingredients.
+If the user wants to know the recipe of a meal, call \`get_recipe\` to get the recipe.
 
-Besides that, you can also chat with users and do some calculations if needed.`
+
+Besides that, you can also chat with users and create custom meal plans if needed.`
+// If the user requests purchasing a stock, call \`show_stock_purchase_ui\` to show the purchase UI.
+// If the user just wants the price, call \`show_stock_price\` to show the price.
+// If you want to show trending stocks, call \`list_stocks\`.
+// If you want to show events, call \`get_events\`.
+// If the user wants to sell stock, or complete another impossible task, respond that you are a demo and cannot do that.
       },
       ...aiState.get().messages.map((message: any) => ({
         role: message.role,
@@ -232,6 +237,45 @@ Besides that, you can also chat with users and do some calculations if needed.`
           return (
             <BotCard>
               <Stocks props={stocks} />
+            </BotCard>
+          )
+        }
+      },
+      getNutrionalInfo: {
+        description:
+          'Get the nutritional information of a meal. Use this to show the nutritional information to the user.',
+        parameters: z.object({
+          meal: z.string().describe('The name of the meal'),
+          calories: z.number().describe('The calories of the meal'),
+          protein: z.number().describe('The protein of the meal'),
+          fat: z.number().describe('The fat of the meal'),
+          carbs: z.number().describe('The carbs of the meal')
+        }),
+        render: async function* ({ meal, calories, protein, fat, carbs }) {
+          yield (
+            <BotCard>
+              <StockSkeleton />
+            </BotCard>
+          )
+
+          await sleep(1000)
+
+          aiState.done({
+            ...aiState.get(),
+            messages: [
+              ...aiState.get().messages,
+              {
+                id: nanoid(),
+                role: 'function',
+                name: 'getNutrionalInfo',
+                content: JSON.stringify({ meal, calories, protein, fat, carbs })
+              }
+            ]
+          })
+
+          return (
+            <BotCard>
+              <Meal props={{ meal, calories, protein, fat, carbs }} />
             </BotCard>
           )
         }
