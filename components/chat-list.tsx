@@ -11,6 +11,7 @@ export interface ChatList {
 }
 
 export function ChatList({ messages, session, isShared }: ChatList) {
+  console.log('chatlist messages', messages.length)
   if (!messages.length) {
     return null
   }

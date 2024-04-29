@@ -125,7 +125,7 @@ async function confirmPurchase(symbol: string, price: number, amount: number) {
 
 async function submitUserMessage(content: string) {
   'use server'
-
+  console.log('submitUserMessage', content)
   const aiState = getMutableAIState<typeof AI>()
 
   aiState.update({
@@ -151,23 +151,23 @@ async function submitUserMessage(content: string) {
       {
         role: 'system',
         content: `\
-You are a nutritous meal planner. You can provide meal plans for losing weight, gaining muscle, or for a family. You can also provide a weekly meal plan for gaining muscle. You can also provide a single day meal plan for gaining muscle.
+          You are a nutritous meal planner. You can provide meal plans for losing weight, gaining muscle, or for a family. You can also provide a weekly meal plan for gaining muscle. You can also provide a single day meal plan for gaining muscle.
 
-Messages inside [] means that it's a UI element or a user event. For example:
-- "[I'm allergic to tree nuts]" means that the meal plan should remove or subsitute any ingredients or meals that include the stated allergy.
-- "[I am a vegetarian]" means that the user is a vegetarian and should adjust the meal plan to not include meat or any animal derived ingredients.
+          Messages inside [] means that it's a UI element or a user event. For example:
+          - "[I'm allergic to tree nuts]" means that the meal plan should remove or subsitute any ingredients or meals that include the stated allergy.
+          - "[I am a vegetarian]" means that the user is a vegetarian and should adjust the meal plan to not include meat or any animal derived ingredients.
 
-If the user wants the nutrional information of a meal, call \`get_nutritional_info\` to get the information.
-If the user wants to know the ingredients of a meal, call \`get_ingredients\` to get the ingredients.
-If the user wants to know the recipe of a meal, call \`get_recipe\` to get the recipe.
+          If the user wants the nutrional information of a meal, call \`get_nutritional_info\` to get the information.
+          If the user wants to know the ingredients of a meal, call \`get_ingredients\` to get the ingredients.
+          If the user wants to know the recipe of a meal, call \`get_recipe\` to get the recipe.
 
 
-Besides that, you can also chat with users and create custom meal plans if needed.`
-// If the user requests purchasing a stock, call \`show_stock_purchase_ui\` to show the purchase UI.
-// If the user just wants the price, call \`show_stock_price\` to show the price.
-// If you want to show trending stocks, call \`list_stocks\`.
-// If you want to show events, call \`get_events\`.
-// If the user wants to sell stock, or complete another impossible task, respond that you are a demo and cannot do that.
+          Besides that, you can also chat with users and create custom meal plans if needed.`
+          // If the user requests purchasing a stock, call \`show_stock_purchase_ui\` to show the purchase UI.
+          // If the user just wants the price, call \`show_stock_price\` to show the price.
+          // If you want to show trending stocks, call \`list_stocks\`.
+          // If you want to show events, call \`get_events\`.
+          // If the user wants to sell stock, or complete another impossible task, respond that you are a demo and cannot do that.
       },
       ...aiState.get().messages.map((message: any) => ({
         role: message.role,
@@ -194,11 +194,17 @@ Besides that, you can also chat with users and create custom meal plans if neede
             }
           ]
         })
+        console.log('done', content)
       } else {
         textStream.update(delta)
       }
-
-      return textNode
+      console.log('completed', content)
+      return (
+        <BotCard>
+          {textNode}
+          <div className="h-2" />
+        </BotCard>
+      )
     },
     functions: {
       listStocks: {
@@ -474,6 +480,7 @@ export const AI = createAI<AIState, UIState>({
         return uiState
       }
     } else {
+      console.log('else return here')
       return
     }
   },
@@ -501,12 +508,14 @@ export const AI = createAI<AIState, UIState>({
 
       await saveChat(chat)
     } else {
+      console.log('nothing to return here')
       return
     }
   }
 })
 
 export const getUIStateFromAIState = (aiState: Chat) => {
+  console.log('aiState', aiState.messages)
   return aiState.messages
     .filter(message => message.role !== 'system')
     .map((message, index) => ({

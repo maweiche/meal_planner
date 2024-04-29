@@ -31,18 +31,19 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
 
   useEffect(() => {
     if (session?.user) {
+      console.log('session?.user is true')
       if (!path.includes('chat') && messages.length === 1) {
         window.history.replaceState({}, '', `/chat/${id}`)
       }
     }
   }, [id, path, session?.user, messages])
 
-  useEffect(() => {
-    const messagesLength = aiState.messages?.length
-    if (messagesLength === 2) {
-      router.refresh()
-    }
-  }, [aiState.messages, router])
+  // useEffect(() => {
+  //   const messagesLength = aiState.messages?.length
+  //   if (messagesLength === 2) {
+  //     router.refresh()
+  //   }
+  // }, [aiState.messages, router])
 
   useEffect(() => {
     setNewChatId(id)
@@ -67,9 +68,17 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
         ref={messagesRef}
       >
         {messages.length ? (
-          <ChatList messages={messages} isShared={false} session={session} />
+          <>
+            messages.length is {messages.length}
+            <ChatList messages={messages} isShared={false} session={session} />
+          </>
+          
         ) : (
-          <EmptyScreen />
+          <>  
+            message.length is {messages.length}
+            <EmptyScreen />
+          </>
+          
         )}
         <div className="h-px w-full" ref={visibilityRef} />
       </div>
