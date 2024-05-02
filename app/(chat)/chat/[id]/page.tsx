@@ -1,11 +1,12 @@
 import { type Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
-
+import { saveChat, getChats } from '@/app/actions'
 import { auth } from '@/auth'
 import { getChat, getMissingKeys } from '@/app/actions'
 import { Chat } from '@/components/chat'
 import { AI } from '@/lib/chat/actions'
 import { Session } from '@/lib/types'
+import { useUIState, useAIState } from 'ai/rsc'
 
 export interface ChatPageProps {
   params: {
@@ -29,18 +30,31 @@ export async function generateMetadata({
 }
 
 export default async function ChatPage({ params }: ChatPageProps) {
+  console.log('chat page params', params)
   const session = (await auth()) as Session
+  console.log('chat page session', session)
   const missingKeys = await getMissingKeys()
-
+  // const [messages] = useUIState()
   if (!session?.user) {
     redirect(`/login?next=/chat/${params.id}`)
   }
 
   const userId = session.user.id as string
   const chat = await getChat(params.id, userId)
-
+  console.log('get chat result ', chat.messages)
   if (!chat) {
     redirect('/')
+    // const newChat = {
+    //   id: params.id,
+    //   title: 'first chat',
+    //   createdAt: new Date(),
+    //   userId,
+    //   path: `/chat/${params.id}`,
+    //   messages
+    // }
+    // console.log('new chat', newChat)
+    // await saveChat(newChat)
+      
   }
 
   if (chat?.userId !== session?.user?.id) {

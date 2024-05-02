@@ -125,7 +125,6 @@ async function confirmPurchase(symbol: string, price: number, amount: number) {
 
 async function submitUserMessage(content: string) {
   'use server'
-  console.log('submitUserMessage', content)
   const aiState = getMutableAIState<typeof AI>()
 
   aiState.update({
@@ -194,11 +193,9 @@ async function submitUserMessage(content: string) {
             }
           ]
         })
-        console.log('done', content)
       } else {
         textStream.update(delta)
       }
-      console.log('completed', content)
       return (
         <BotCard>
           {textNode}
@@ -474,13 +471,28 @@ export const AI = createAI<AIState, UIState>({
 
     if (session && session.user) {
       const aiState = getAIState()
+      const { chatId, messages } = aiState
 
+      const createdAt = new Date()
+      const userId = session.user.id as string
+      const path = `/chat/${chatId}`
+      const title = messages[0].content.substring(0, 100)
+
+      const chat: Chat = {
+        id: chatId,
+        title,
+        userId,
+        createdAt,
+        messages,
+        path
+      }
+      console.log('saving chat', chat)
+      await saveChat(chat)
       if (aiState) {
         const uiState = getUIStateFromAIState(aiState)
         return uiState
       }
     } else {
-      console.log('else return here')
       return
     }
   },
@@ -505,17 +517,15 @@ export const AI = createAI<AIState, UIState>({
         messages,
         path
       }
-
+      console.log('saving chat', chat)
       await saveChat(chat)
     } else {
-      console.log('nothing to return here')
       return
     }
   }
 })
 
 export const getUIStateFromAIState = (aiState: Chat) => {
-  console.log('aiState', aiState.messages)
   return aiState.messages
     .filter(message => message.role !== 'system')
     .map((message, index) => ({

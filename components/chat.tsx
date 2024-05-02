@@ -12,6 +12,8 @@ import { usePathname, useRouter } from 'next/navigation'
 import { Message } from '@/lib/chat/actions'
 import { useScrollAnchor } from '@/lib/hooks/use-scroll-anchor'
 import { toast } from 'sonner'
+import { saveChat, getChats } from '@/app/actions'
+import { type Chat } from '@/lib/types'
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   initialMessages?: Message[]
@@ -29,21 +31,60 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
 
   const [_, setNewChatId] = useLocalStorage('newChatId', id)
 
+  async function getAndSaveChat() {
+    if(!id) {
+      console.log('no id')
+      return
+    }
+    if(messages.length === 0) {
+      console.log('no messages')
+      return
+    }
+    const createdAt = new Date()
+    const userId = session!.user.id as string
+    const path = `/chat/${id}`
+    
+    console.log('chat not found in chats, saving chats')
+    console.log('messages', messages)
+    console.log('aiState', aiState)
+    const title = messages[0].display.props.children.substring(0, 100)
+    const newChat: Chat = {
+      id,
+      title,
+      createdAt,
+      userId,
+      path,
+      messages: aiState.messages,
+    }
+    console.log('new chat,',typeof newChat)
+    const chats = await getChats(userId)
+    console.log('chats', chats)
+    // if (!chats.find((c) => c.id === chats!.id)) {
+      console.log('chat not found in chats, saving chats')
+      saveChat(newChat) 
+    // }
+  }
+
   useEffect(() => {
     if (session?.user) {
-      console.log('session?.user is true')
       if (!path.includes('chat') && messages.length === 1) {
         window.history.replaceState({}, '', `/chat/${id}`)
+        // getAndSaveChat()
       }
     }
   }, [id, path, session?.user, messages])
 
-  // useEffect(() => {
-  //   const messagesLength = aiState.messages?.length
+  useEffect(() => {
+    const messagesLength = aiState.messages?.length
   //   if (messagesLength === 2) {
   //     router.refresh()
   //   }
-  // }, [aiState.messages, router])
+  if(messagesLength > 0) {
+  console.log('aiState.messages', aiState.messages)
+  console.log('messagesLength', messagesLength)
+  getAndSaveChat()
+  }
+  }, [aiState.messages, router])
 
   useEffect(() => {
     setNewChatId(id)
