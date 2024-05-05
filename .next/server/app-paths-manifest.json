@@ -1,5 +1,5 @@
 {
-  "/not-found": "app/not-found.js",
+  "/share/[id]/page": "static/webpack/app/share/[id]/page.db912b2a1ca7134f.hot-update.js",
   "/page": "app/page.js",
   "/(chat)/chat/[id]/page": "app/(chat)/chat/[id]/page.js"
 }

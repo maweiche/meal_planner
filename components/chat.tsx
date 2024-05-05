@@ -7,6 +7,7 @@ import { EmptyScreen } from '@/components/empty-screen'
 import { useLocalStorage } from '@/lib/hooks/use-local-storage'
 import { useEffect, useState } from 'react'
 import { useUIState, useAIState } from 'ai/rsc'
+import { UIState } from '@/lib/chat/actions'
 import { Session } from '@/lib/types'
 import { usePathname, useRouter } from 'next/navigation'
 import { Message } from '@/lib/chat/actions'
@@ -16,19 +17,19 @@ import { saveChat, getChats } from '@/app/actions'
 import { type Chat } from '@/lib/types'
 
 export interface ChatProps extends React.ComponentProps<'div'> {
-  initialMessages?: Message[]
+  initialMessages?: UIState
   id?: string
   session?: Session
   missingKeys: string[]
 }
 
-export function Chat({ id, className, session, missingKeys }: ChatProps) {
+export function Chat({ id, className, session, missingKeys, initialMessages }: ChatProps) {
   const router = useRouter()
   const path = usePathname()
   const [input, setInput] = useState('')
   const [messages] = useUIState()
   const [aiState] = useAIState()
-
+  console.log('initialMessages', initialMessages)
   const [_, setNewChatId] = useLocalStorage('newChatId', id)
 
   async function getAndSaveChat() {
@@ -108,10 +109,10 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
         className={cn('pb-[200px] pt-4 md:pt-10', className)}
         ref={messagesRef}
       >
-        {messages.length ? (
+        {initialMessages ? (
           <>
             messages.length is {messages.length}
-            <ChatList messages={messages} isShared={false} session={session} />
+            <ChatList messages={initialMessages!} isShared={false} session={session} />
           </>
           
         ) : (
