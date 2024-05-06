@@ -36,24 +36,24 @@ export function ChatPanel({
 
   const exampleMessages = [
     {
-      heading: 'Single Day Meal Plan',
-      subheading: 'for losing weight',
-      message: `Provide a simple single day meal plan for losing weight`
+      heading: 'What are the',
+      subheading: 'trending memecoins today?',
+      message: `What are the trending memecoins today?`
     },
     {
-      heading: 'Family Meal Plan',
-      subheading: 'for a healthy week of meals',
-      message: 'Provide a weeks worth of healthy meals for a family of 4.'
+      heading: 'What is the price of',
+      subheading: '$DOGE right now?',
+      message: 'What is the price of $DOGE right now?'
     },
     {
-      heading: 'Single Day Meal Plan',
-      subheading: 'for gaining muscle',
-      message: `Provide a simple single day meal plan for gaining muscle.`
+      heading: 'I would like to buy',
+      subheading: '42 $DOGE',
+      message: `I would like to buy 42 $DOGE`
     },
     {
-      heading: 'Weekly Meal Plan',
-      subheading: `for gaining muscle`,
-      message: `Provide a weekly meal plan for gaining muscle.`
+      heading: 'What are some',
+      subheading: `recent events about $DOGE?`,
+      message: `What are some recent events about $DOGE?`
     }
   ]
 
@@ -69,7 +69,7 @@ export function ChatPanel({
           {messages.length === 0 &&
             exampleMessages.map((example, index) => (
               <div
-                key={index}
+                key={example.heading}
                 className={`cursor-pointer rounded-lg border bg-white p-4 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900 ${
                   index > 1 && 'hidden md:block'
                 }`}

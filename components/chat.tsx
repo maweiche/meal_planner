@@ -7,85 +7,42 @@ import { EmptyScreen } from '@/components/empty-screen'
 import { useLocalStorage } from '@/lib/hooks/use-local-storage'
 import { useEffect, useState } from 'react'
 import { useUIState, useAIState } from 'ai/rsc'
-import { UIState } from '@/lib/chat/actions'
 import { Session } from '@/lib/types'
 import { usePathname, useRouter } from 'next/navigation'
 import { Message } from '@/lib/chat/actions'
 import { useScrollAnchor } from '@/lib/hooks/use-scroll-anchor'
 import { toast } from 'sonner'
-import { saveChat, getChats } from '@/app/actions'
-import { type Chat } from '@/lib/types'
 
 export interface ChatProps extends React.ComponentProps<'div'> {
-  initialMessages?: UIState
+  initialMessages?: Message[]
   id?: string
   session?: Session
   missingKeys: string[]
 }
 
-export function Chat({ id, className, session, missingKeys, initialMessages }: ChatProps) {
+export function Chat({ id, className, session, missingKeys }: ChatProps) {
   const router = useRouter()
   const path = usePathname()
   const [input, setInput] = useState('')
   const [messages] = useUIState()
   const [aiState] = useAIState()
-  console.log('initialMessages', initialMessages)
-  const [_, setNewChatId] = useLocalStorage('newChatId', id)
 
-  async function getAndSaveChat() {
-    if(!id) {
-      console.log('no id')
-      return
-    }
-    if(messages.length === 0) {
-      console.log('no messages')
-      return
-    }
-    const createdAt = new Date()
-    const userId = session!.user.id as string
-    const path = `/chat/${id}`
-    
-    console.log('chat not found in chats, saving chats')
-    console.log('messages', messages)
-    console.log('aiState', aiState)
-    const title = messages[0].display.props.children.substring(0, 100)
-    const newChat: Chat = {
-      id,
-      title,
-      createdAt,
-      userId,
-      path,
-      messages: aiState.messages,
-    }
-    console.log('new chat,',typeof newChat)
-    const chats = await getChats(userId)
-    console.log('chats', chats)
-    // if (!chats.find((c) => c.id === chats!.id)) {
-      console.log('chat not found in chats, saving chats')
-      saveChat(newChat) 
-    // }
-  }
+  const [_, setNewChatId] = useLocalStorage('newChatId', id)
 
   useEffect(() => {
     if (session?.user) {
       if (!path.includes('chat') && messages.length === 1) {
         window.history.replaceState({}, '', `/chat/${id}`)
-        // getAndSaveChat()
       }
     }
   }, [id, path, session?.user, messages])
 
-  useEffect(() => {
-    const messagesLength = aiState.messages?.length
+  // useEffect(() => {
+  //   const messagesLength = aiState.messages?.length
   //   if (messagesLength === 2) {
   //     router.refresh()
   //   }
-  if(messagesLength > 0) {
-  console.log('aiState.messages', aiState.messages)
-  console.log('messagesLength', messagesLength)
-  getAndSaveChat()
-  }
-  }, [aiState.messages, router])
+  // }, [aiState.messages, router])
 
   useEffect(() => {
     setNewChatId(id)
@@ -109,18 +66,10 @@ export function Chat({ id, className, session, missingKeys, initialMessages }: C
         className={cn('pb-[200px] pt-4 md:pt-10', className)}
         ref={messagesRef}
       >
-        {initialMessages ? (
-          <>
-            messages.length is {messages.length}
-            <ChatList messages={initialMessages!} isShared={false} session={session} />
-          </>
-          
+        {messages.length ? (
+          <ChatList messages={messages} isShared={false} session={session} />
         ) : (
-          <>  
-            message.length is {messages.length}
-            <EmptyScreen />
-          </>
-          
+          <EmptyScreen />
         )}
         <div className="h-px w-full" ref={visibilityRef} />
       </div>

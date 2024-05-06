@@ -2,20 +2,26 @@
 
 import { useState, useRef, useEffect, useId } from 'react'
 import { scaleLinear } from 'd3-scale'
-import { subMonths, format } from 'date-fns'
+import { subMonths, format, sub } from 'date-fns'
 import { useResizeObserver } from 'usehooks-ts'
-import { useAIState } from 'ai/rsc'
+import { useActions, useUIState, useAIState } from 'ai/rsc'
+import type { AI } from '@/lib/chat/actions'
 
 interface Meal {
   meal: string,
   calories: number,
   protein: number,
   fat: number,
-  carbs: number
+  carbs: number,
+  title: string,
+  ingredients: string[],
+  cookingInstructions: string[],
 }
 
-export function Meal({ props: { meal, calories, protein, fat, carbs } }: { props: Meal }) {
+export function Meal({ props: { meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions } }: { props: Meal }) {
   const [aiState, setAIState] = useAIState()
+  const { submitUserMessage } = useActions()
+  const [, setMessages] = useUIState<typeof AI>()
   const id = useId()
 
   return (
@@ -27,6 +33,30 @@ export function Meal({ props: { meal, calories, protein, fat, carbs } }: { props
       <div className="text-lg text-zinc-300">{protein} Protein</div>
       <div className="text-3xl font-bold">{fat} Fat</div>
       <div className="text mt-1 text-xs text-zinc-500">{carbs} Carbs</div>
+      <div className="text-lg text-zinc-300">{title}</div>
+      <div className="text-sm text-zinc-500">Ingredients:</div>
+      <ul className="list-disc list-inside text-xs text-zinc-500">
+        {ingredients.map(ingredient => (
+          <li key={ingredient}>{ingredient}</li>
+        ))}
+      </ul>
+      <div className="text-sm text-zinc-500">Cooking Instructions:</div>
+      <ul className="list-hyphen list-inside text-xs text-zinc-500">
+        {cookingInstructions.map(instruction => (
+          <li key={instruction}>{instruction}</li>
+        ))}
+      </ul>
+
+      {/* include a button that prompts the ai for a different recipe */}
+      <button
+        onClick={async () => {
+          const response = await submitUserMessage('Get a different recipe');
+          setMessages(currentMessages => [...currentMessages, response])
+        }}
+        className="mt-4 bg-green-400 text-black px-4 py-2 rounded-lg"
+      >
+        Get a different recipe
+      </button>
     </div>
   )
 }
