@@ -24,12 +24,12 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
       <div
         className={cn(
           'flex size-8 shrink-0 select-none items-center justify-center rounded-md border shadow',
-          message.role === 'user'
+          message.role && message.role === 'user'
             ? 'bg-background'
             : 'bg-primary text-primary-foreground'
         )}
       >
-        {message.role === 'user' ? <IconUser /> : <IconOpenAI />}
+        {message.role && message.role === 'user' ? <IconUser /> : <IconOpenAI />}
       </div>
       <div className="flex-1 px-1 ml-4 space-y-2 overflow-hidden">
         <MemoizedReactMarkdown

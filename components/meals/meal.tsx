@@ -23,7 +23,8 @@ export function Meal({ props: { meal, calories, protein, fat, carbs, title, ingr
   const { submitUserMessage } = useActions()
   const [, setMessages] = useUIState<typeof AI>()
   const id = useId()
-
+  const message = 'What is the price of $DOGE right now?';
+  console.log('props', { meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions })
   return (
     <div className="rounded-xl border bg-zinc-950 p-4 text-green-400">
       <div className="float-right inline-block rounded-full bg-white/10 px-2 py-1 text-xs">
@@ -41,7 +42,7 @@ export function Meal({ props: { meal, calories, protein, fat, carbs, title, ingr
         ))}
       </ul>
       <div className="text-sm text-zinc-500">Cooking Instructions:</div>
-      <ul className="list-hyphen list-inside text-xs text-zinc-500">
+      <ul className="list-inside text-xs text-zinc-500">
         {cookingInstructions.map(instruction => (
           <li key={instruction}>{instruction}</li>
         ))}
@@ -50,8 +51,9 @@ export function Meal({ props: { meal, calories, protein, fat, carbs, title, ingr
       {/* include a button that prompts the ai for a different recipe */}
       <button
         onClick={async () => {
-          const response = await submitUserMessage('Get a different recipe');
+          const response = await submitUserMessage('Get a new meal.');
           setMessages(currentMessages => [...currentMessages, response])
+          console.log('response', response)
         }}
         className="mt-4 bg-green-400 text-black px-4 py-2 rounded-lg"
       >

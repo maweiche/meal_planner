@@ -6,10 +6,11 @@ import {
   getMutableAIState,
   getAIState,
   streamUI,
-  createStreamableValue
+  createStreamableValue,
+  render
 } from 'ai/rsc'
-import { openai } from '@ai-sdk/openai'
-
+// import { openai } from '@ai-sdk/openai'
+import OpenAI from 'openai'
 import {
   spinner,
   BotCard,
@@ -36,6 +37,10 @@ import { SpinnerMessage, UserMessage } from '@/components/stocks/message'
 import { Chat } from '@/lib/types'
 import { auth } from '@/auth'
 import { Session } from 'next-auth'
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || ''
+})
 
 async function confirmPurchase(symbol: string, price: number, amount: number) {
   'use server'
@@ -122,7 +127,8 @@ async function submitUserMessage(content: string) {
   'use server'
 
   const aiState = getMutableAIState<typeof AI>()
-
+  console.log('submitUserMessage', content)
+  console.log('aiState', aiState.get())
   aiState.update({
     ...aiState.get(),
     saved: false,
@@ -138,23 +144,37 @@ async function submitUserMessage(content: string) {
 
   let textStream: undefined | ReturnType<typeof createStreamableValue<string>>
   let textNode: undefined | React.ReactNode
-
-  const result = await streamUI({
-    model: openai('gpt-3.5-turbo'),
+  console.log('about to start streamUI', ...aiState.get().messages)
+  const ui = render({
+    model: 'gpt-3.5-turbo',
+    provider: openai,
     initial: <SpinnerMessage />,
-    system: `\
-    You are a nutritous meal planner. You can provide meal plans for losing weight, gaining muscle, or for a family. You can also provide a weekly meal plan for gaining muscle. You can also provide a single day meal plan for gaining muscle.
+    messages: [ 
+      {
+        role: 'system',
+        content: `\
+            You are a nutritous meal planner. You can provide meal plans for losing weight, gaining muscle, or for a family. You can also provide a weekly meal plan for gaining muscle. You can also provide a single day meal plan for gaining muscle.
 
-    Messages inside [] means that it's a UI element or a user event. For example:
-    - "[I'm allergic to tree nuts]" means that the meal plan should remove or subsitute any ingredients or meals that include the stated allergy.
-    - "[I am a vegetarian]" means that the user is a vegetarian and should adjust the meal plan to not include meat or any animal derived ingredients.
+            Messages inside [] means that it's a UI element or a user event. For example:
+            - "[I'm allergic to tree nuts]" means that the meal plan should remove or subsitute any ingredients or meals that include the stated allergy.
+            - "[I am a vegetarian]" means that the user is a vegetarian and should adjust the meal plan to not include meat or any animal derived ingredients.
 
-    All meals returned should display the name of the dish (i.e. Chicken Alfredo), the ingredients, and the recipe.
+            All meals returned should display the name of the dish (i.e. Chicken Alfredo), the ingredients, and the recipe.
+            If the user wants the nutrional information of a meal, call \`get_nutritional_info\` to get the information.
+                  If the user wants to know the ingredients of a meal, call \`get_ingredients\` to get the ingredients.
+                  If the user wants a new meal option, call \`get_new_meal\` to get a new meal.
+                  If the user wants to know the recipe of a meal, call \`get_recipe\` to get the recipe.
+                  If the user requests purchasing a stock, call \`show_stock_purchase_ui\` to show the purchase UI.
+                  If the user just wants the price, call \`show_stock_price\` to show the price.
+                  If you want to show trending stocks, call \`list_stocks\`.
+                  If you want to show events, call \`get_events\`.
+                  If the user wants to sell stock, or complete another impossible task, respond that you are a demo and cannot do that.
 
-    Besides that, you can also chat with users and create custom meal plans if needed.`,
-    messages: [
+            Besides that, you can also chat with users and create custom meal plans if needed.`
+      },
+    
       ...aiState.get().messages.map((message: any) => ({
-        role: message.role,
+        role: message.role ? message.role : 'assistant',
         content: message.content,
         name: message.name
       }))
@@ -177,8 +197,9 @@ async function submitUserMessage(content: string) {
             content
           }
         ]
-
+        console.log('done***', state.messages)
         if (!state.saved) {
+          console.log('state', state.messages)
           // Check if not already saved
           addOrUpdateChat(state) // Save if this is the final response
           state.saved = true
@@ -190,7 +211,7 @@ async function submitUserMessage(content: string) {
 
       return textNode
     },
-    tools: {
+    functions: {
       getNutritionalInfo: {
         description:
           'Get the nutritional information of a meal. Use this to show the nutritional information to the user. Provide the title of the meal being queried along with the cooking instructions and ingredients.',
@@ -204,7 +225,7 @@ async function submitUserMessage(content: string) {
           ingredients: z.array(z.string()).describe('The ingredients of the meal'),
           cookingInstructions: z.array(z.string()).describe('The cooking instructions of the meal')
         }),
-        generate: async function* ({ meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions }) {
+        render: async function* ({ meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions }) {
           yield (
             <BotCard>
               <StockSkeleton />
@@ -220,7 +241,67 @@ async function submitUserMessage(content: string) {
               {
                 id: nanoid(),
                 role: 'function',
-                name: 'getNutrionalInfo',
+                name: 'getNutritionalInfo',
+                content: JSON.stringify({ meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions})
+              }
+            ]
+          })
+
+          let state = aiState.get()
+
+          state.messages = [
+            ...state.messages,
+            {
+              id: nanoid(),
+              role: 'assistant',
+              content
+            }
+          ]
+
+          if (!state.saved) {
+            // Check if not already saved
+            addOrUpdateChat(state) // Save if this is the final response
+            state.saved = true
+          }
+          return (
+            <BotCard>
+              <Meal props={{ meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions }} />
+            </BotCard>
+          )
+        }
+      },
+      getNewMeal: {
+        description:
+          'Provide a new meal option. Get the nutritional information of a meal. Use this to show the nutritional information to the user. Provide the title of the meal being queried along with the cooking instructions and ingredients.',
+        parameters: z.object({
+          meal: z.string().describe('The name of the meal'),
+          calories: z.number().describe('The calories of the meal'),
+          protein: z.number().describe('The protein of the meal'),
+          fat: z.number().describe('The fat of the meal'),
+          carbs: z.number().describe('The carbs of the meal'),
+          title: z.string().describe('The title of the dish, i.e. "Chicken Alfredo"'),
+          ingredients: z.array(z.string()).describe('The ingredients of the meal'),
+          cookingInstructions: z.array(z.string()).describe('The cooking instructions of the meal')
+        }),
+        render: async function* ({ meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions }) {
+          yield (
+            <BotCard>
+              <Meal
+                props={{ meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions }}
+              />
+            </BotCard>
+          )
+
+          await sleep(1000)
+          
+          aiState.done({
+            ...aiState.get(),
+            messages: [
+              ...aiState.get().messages,
+              {
+                id: nanoid(),
+                role: 'function',
+                name: 'getNutritionalInfo',
                 content: JSON.stringify({ meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions})
               }
             ]
@@ -260,7 +341,7 @@ async function submitUserMessage(content: string) {
             })
           )
         }),
-        generate: async function* ({ stocks }) {
+        render: async function* ({ stocks }) {
           yield (
             <BotCard>
               <StocksSkeleton />
@@ -301,7 +382,7 @@ async function submitUserMessage(content: string) {
           price: z.number().describe('The price of the stock.'),
           delta: z.number().describe('The change in price of the stock')
         }),
-        generate: async function* ({ symbol, price, delta }) {
+        render: async function* ({ symbol, price, delta }) {
           yield (
             <BotCard>
               <StockSkeleton />
@@ -346,7 +427,7 @@ async function submitUserMessage(content: string) {
               'The **number of shares** for a stock or currency to purchase. Can be optional if the user did not specify it.'
             )
         }),
-        generate: async function* ({ symbol, price, numberOfShares = 100 }) {
+        render: async function* ({ symbol, price, numberOfShares = 100 }) {
           if (numberOfShares <= 0 || numberOfShares > 1000) {
             aiState.done({
               ...aiState.get(),
@@ -408,7 +489,7 @@ async function submitUserMessage(content: string) {
             })
           )
         }),
-        generate: async function* ({ events }) {
+        render: async function* ({ events }) {
           yield (
             <BotCard>
               <EventsSkeleton />
@@ -442,7 +523,7 @@ async function submitUserMessage(content: string) {
 
   return {
     id: nanoid(),
-    display: result.value,
+    display: ui,
   }
 }
 
@@ -532,8 +613,9 @@ export const AI = createAI<AIState, UIState>({
 })
 
 export const getUIStateFromAIState = (aiState: Chat) => {
+  console.log('aiState', aiState.messages)
   return aiState.messages
-    .filter(message => message.role !== 'system')
+    .filter(message => message.role && message.role !== 'system')
     .map((message, index) => ({
       id: `${aiState.chatId}-${index}`,
       display:
@@ -553,6 +635,14 @@ export const getUIStateFromAIState = (aiState: Chat) => {
           ) : message.name === 'getEvents' ? (
             <BotCard>
               <Events props={JSON.parse(message.content)} />
+            </BotCard>
+          ) : message.name === 'getNutritionalInfo' ? (
+            <BotCard>
+              <Meal props={JSON.parse(message.content)} />
+            </BotCard>
+          ) : message.name === 'getNewMeal' ? (
+            <BotCard>
+              <Meal props={JSON.parse(message.content)} />
             </BotCard>
           ) : null
         ) : message.role === 'user' ? (
