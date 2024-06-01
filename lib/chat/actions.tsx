@@ -20,6 +20,7 @@ import {
   Purchase
 } from '@/components/stocks'
 import { Meal } from '@/components/meals/meal'
+import { MealPlan } from '@/components/meals/mealPlan'
 import { z } from 'zod'
 import { EventsSkeleton } from '@/components/stocks/events-skeleton'
 import { Events } from '@/components/stocks/events'
@@ -153,24 +154,28 @@ async function submitUserMessage(content: string) {
       {
         role: 'system',
         content: `\
-            You are a nutritous meal planner. You can provide meal plans for losing weight, gaining muscle, or for a family. You can also provide a weekly meal plan for gaining muscle. You can also provide a single day meal plan for gaining muscle.
+          You are a Health Coach who specializes in designing nutritous meal plans based on the users needs, wants, and allegeries.
+          The My Plate Method is an example of a balanced meal with all three macros (protein, carbs, and fat), along with fruits and vegetables.
+          Your goal is to provide meals that follow the My Plate method along with user preferences.
+      
+          As a Health Coach you can provide meal plans, recipes, and nutritional information to the user,
+          but you cannot provide medical advice or diagnose any medical conditions.
+      
+          You are also not meant to provide any solutions to health-conditions, but you can provide general advice on how to eat healthier.
+  
+          Messages inside [] means that it's a UI element or a user event. For example:
+          - "[I'm allergic to tree nuts]" means that the meal plan should remove or subsitute any ingredients or meals that include the stated allergy.
+          - "[I am a vegetarian]" means that the user is a vegetarian and should adjust the meal plan to not include meat or any animal derived ingredients.
 
-            Messages inside [] means that it's a UI element or a user event. For example:
-            - "[I'm allergic to tree nuts]" means that the meal plan should remove or subsitute any ingredients or meals that include the stated allergy.
-            - "[I am a vegetarian]" means that the user is a vegetarian and should adjust the meal plan to not include meat or any animal derived ingredients.
+          For any requests that use get_meal_plan with preferences call \`get_meal_plan\` to get a meal plan based on their preferences and goals. Please make sure to include the correct amount of meals based on the total defined.
 
-            All meals returned should display the name of the dish (i.e. Chicken Alfredo), the ingredients, and the recipe.
-            If the user wants the nutrional information of a meal, call \`get_nutritional_info\` to get the information.
-                  If the user wants to know the ingredients of a meal, call \`get_ingredients\` to get the ingredients.
-                  If the user wants a new meal option, call \`get_new_meal\` to get a new meal.
-                  If the user wants to know the recipe of a meal, call \`get_recipe\` to get the recipe.
-                  If the user requests purchasing a stock, call \`show_stock_purchase_ui\` to show the purchase UI.
-                  If the user just wants the price, call \`show_stock_price\` to show the price.
-                  If you want to show trending stocks, call \`list_stocks\`.
-                  If you want to show events, call \`get_events\`.
-                  If the user wants to sell stock, or complete another impossible task, respond that you are a demo and cannot do that.
+          All meals returned should display the name of the dish (i.e. Chicken Alfredo), the ingredients, and the recipe.
+          You should always provide the user with nutrional information of a meal recomennded, call \`get_nutritional_info\` to get the information.
+                
+          If the user wants to complete another impossible task, respond that you are a demo and cannot do that.
 
-            Besides that, you can also chat with users and create custom meal plans if needed.`
+          Besides that, you can also chat with users and create custom meal plans if needed.
+        `
       },
     
       ...aiState.get().messages.map((message: any) => ({
@@ -281,13 +286,14 @@ async function submitUserMessage(content: string) {
           carbs: z.number().describe('The carbs of the meal'),
           title: z.string().describe('The title of the dish, i.e. "Chicken Alfredo"'),
           ingredients: z.array(z.string()).describe('The ingredients of the meal'),
-          cookingInstructions: z.array(z.string()).describe('The cooking instructions of the meal')
+          cookingInstructions: z.array(z.string()).describe('The cooking instructions of the meal'),
+          vegetarian: z.boolean().optional().describe('Whether the meal is vegetarian')
         }),
-        render: async function* ({ meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions }) {
+        render: async function* ({ meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions, vegetarian }) {
           yield (
             <BotCard>
               <Meal
-                props={{ meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions }}
+                props={{ meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions, vegetarian: vegetarian || false }}
               />
             </BotCard>
           )
@@ -325,7 +331,104 @@ async function submitUserMessage(content: string) {
           }
           return (
             <BotCard>
-              <Meal props={{ meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions }} />
+              <Meal props={{ meal, calories, protein, fat, carbs, title, ingredients, cookingInstructions, vegetarian: vegetarian || false }} />
+            </BotCard>
+          )
+        }
+      },
+      // :
+                          // Goal: ${generalQuestionObj.goal},
+                          // ${quickEasyObj.totalPrepTime ? `Max Total Prep Time: ${quickEasyObj.totalPrepTime},` : ''}
+                          // ${quickEasyObj.totalCookingTime ? `Max Total Cooking Time: ${quickEasyObj.totalCookingTime},` : ''}
+                          // ${muscleBuildObj.weight ? `Current Weight: ${muscleBuildObj.weight},` : ''}
+                          // ${muscleBuildObj.proteinSources.length ? `Protein Sources: ${muscleBuildObj.proteinSources.join(', ')},` : ''}
+                          // ${weightLossObj.weight ? `Current Weight: ${weightLossObj.weight},` : ''}
+                          // ${weightLossObj.targetWeight ? `Target Weight: ${weightLossObj.targetWeight},` : ''}
+                          // ${weightLossObj.activityLevel ? `Activity Level: ${weightLossObj.activityLevel},` : ''}
+                          // ${generalQuestionObj.allergies.length ? `Allergies: ${generalQuestionObj.allergies.join(', ')},` : ''}
+                          // ${generalQuestionObj.restrictions.length ? `Dietary Restrictions: ${generalQuestionObj.restrictions.join(', ')},` : ''}
+                          // ${generalQuestionObj.targetCuisine.length ? `Target Cuisine: ${generalQuestionObj.targetCuisine.join(', ')},` : ''}
+                          // ${generalQuestionObj.servingsPerMeal ? `Servings Per Meal: ${generalQuestionObj.servingsPerMeal},` : ''}
+                          // ${generalQuestionObj.mealsPerDay ? `Meals Per Day: ${generalQuestionObj.mealsPerDay},` : ''}
+                          // ${generalQuestionObj.totalDays ? `Total Days: ${generalQuestionObj.totalDays},` : ''}
+                          // ${generalQuestionObj.mealTypes.length ? `Meal Types: ${generalQuestionObj.mealTypes.join(', ')},` : ''}
+
+                          // Please provide a total of ${generalQuestionObj.totalDays * generalQuestionObj.mealsPerDay} different meals.
+      getMealPlan: {
+        description:
+          'Provide a healthy and nutritious meal plan. Total amount of different meals needed is defined by total meals (e.g. total meals: 6). The preferences will be defined. Provide a DIFFERENT meal for each meal needed. The preferences will contain a Goal (e.g. lose weight, build muscle, quick and easy), please make each meal consistent with the goal in mind.',
+        parameters: z.object({
+          // the object will be an array of meals with the following properties
+          meals: z.array(
+            z.object({
+              meal: z.string().describe('The name of the meal'),
+              calories: z.number().describe('The calories of the meal'),
+              protein: z.number().describe('The protein of the meal'),
+              fat: z.number().describe('The fat of the meal'),
+              carbs: z.number().describe('The carbs of the meal'),
+              title: z.string().describe('The title of the dish, i.e. "Chicken Alfredo"'),
+              ingredients: z.array(z.string()).describe('The quantifiable amount of ingredients needed for the meal, take into account the serving amount needed (e.g. 2 Salmon fillets, 1 clove garlic)'),
+              cookingInstructions: z.array(z.string()).describe('The cooking instructions of the meal'),
+              vegetarian: z.boolean().optional().describe('Whether the meal is vegetarian'),
+            })
+          )
+        }),
+        render: async function* ({
+          meals
+         }) {
+          yield (
+            <BotCard>
+              <MealPlan
+                meals={meals}
+              />
+            </BotCard>
+          )
+
+          await sleep(1000)
+          
+          aiState.done({
+            ...aiState.get(),
+            messages: [
+              ...aiState.get().messages,
+              {
+                id: nanoid(),
+                role: 'function',
+                name: 'getNutritionalInfo',
+                content: JSON.stringify({ 
+                  meal: meals[0].meal, 
+                  calories: meals[0].calories, 
+                  protein: meals[0].protein, 
+                  fat: meals[0].fat, 
+                  carbs: meals[0].carbs, 
+                  title: meals[0].title, 
+                  ingredients: meals[0].ingredients, 
+                  cookingInstructions: meals[0].cookingInstructions
+                })
+              }
+            ]
+          })
+
+          let state = aiState.get()
+
+          state.messages = [
+            ...state.messages,
+            {
+              id: nanoid(),
+              role: 'assistant',
+              content
+            }
+          ]
+
+          if (!state.saved) {
+            // Check if not already saved
+            addOrUpdateChat(state) // Save if this is the final response
+            state.saved = true
+          }
+          return (
+            <BotCard>
+              <MealPlan
+                meals={meals}
+              />
             </BotCard>
           )
         }
