@@ -3,6 +3,7 @@
   "middleware": {
     "/": {
       "files": [
+        "prerender-manifest.js",
         "server/edge-runtime-webpack.js",
         "server/middleware.js"
       ],
@@ -10,16 +11,52 @@
       "page": "/",
       "matchers": [
         {
-          "regexp": "^/.*$",
-          "originalSource": "/:path*"
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!api|_next\\/static|_next\\/image|.*\\.png$).*))(.json)?[\\/#\\?]?$",
+          "originalSource": "/((?!api|_next/static|_next/image|.*\\.png$).*)"
         }
       ],
       "wasm": [],
       "assets": [],
-      "environments": {}
+      "environments": {
+        "previewModeId": "eb401262b8f164187f5fc4238a25ea33",
+        "previewModeSigningKey": "9a65e020181aac69a7d805a77966b659091f586ed4cd7694b8068ceb8e81adbe",
+        "previewModeEncryptionKey": "3bc779608ac92dc22e01e5f1cae0cf6571b1cd102b21e856921a27b60eab8100"
+      }
     }
   },
-  "functions": {},
+  "functions": {
+    "/share/[id]/page": {
+      "files": [
+        "server/server-reference-manifest.js",
+        "server/app/share/[id]/page_client-reference-manifest.js",
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "prerender-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/app/share/[id]/page.js"
+      ],
+      "name": "app/share/[id]/page",
+      "page": "/share/[id]/page",
+      "matchers": [
+        {
+          "regexp": "^/share/(?<id>[^/]+?)$",
+          "originalSource": "/share/[id]"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "environments": {
+        "previewModeId": "eb401262b8f164187f5fc4238a25ea33",
+        "previewModeSigningKey": "9a65e020181aac69a7d805a77966b659091f586ed4cd7694b8068ceb8e81adbe",
+        "previewModeEncryptionKey": "3bc779608ac92dc22e01e5f1cae0cf6571b1cd102b21e856921a27b60eab8100"
+      },
+      "regions": [
+        "home"
+      ]
+    }
+  },
   "sortedMiddleware": [
     "/"
   ]

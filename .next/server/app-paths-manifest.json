@@ -1,3 +1,11 @@
 {
-  "/(chat)/page": "app/(chat)/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/login/page": "app/login/page.js",
+  "/new/page": "app/new/page.js",
+  "/signup/page": "app/signup/page.js",
+  "/opengraph-image.png/route": "app/opengraph-image.png/route.js",
+  "/twitter-image.png/route": "app/twitter-image.png/route.js",
+  "/(chat)/chat/[id]/page": "app/(chat)/chat/[id]/page.js",
+  "/(chat)/page": "app/(chat)/page.js",
+  "/share/[id]/page": "app/share/[id]/page.js"
 }

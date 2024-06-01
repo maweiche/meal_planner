@@ -252,14 +252,14 @@ export function EmptyScreen() {
       <div className="mx-auto max-w-2xl px-4">
         <div className="flex flex-col gap-2 rounded-lg border bg-background p-8">
           <h1 className="text-lg font-semibold">
-            Welcome to Meal Planner Mate!!
+            Welcome to Plan 2 Eat!!
           </h1>
           <p className="leading-normal text-muted-foreground">
-            Meal Planner Mate is a chatbot that helps you plan your meals based on
+            Plan 2 Eat is a chatbot that helps you plan your meals based on
             your needs and preferences.
           </p>
           <p className="leading-normal text-muted-foreground">
-            Our goal is to make it easy for you to think of and plan your meals
+            The goal is to make it easy for you to think of and plan your meals
             in a nutritious and easy way.
           </p>
 
@@ -269,7 +269,7 @@ export function EmptyScreen() {
 
           <button
             onClick={() => setActivePage(1)}
-            className="bg-primary text-white py-2 px-4 rounded-lg"
+            className="bg-primary text-secondary py-2 px-4 rounded-lg"
           >
             Get Started
           </button>
@@ -296,7 +296,7 @@ export function EmptyScreen() {
                 onClick={question.action}
               >
                 <div className="text-sm font-semibold">{question.heading}</div>
-                <div className="text-sm text-zinc-600">
+                <div className="text-sm text-secondary-foreground">
                   {question.subheading}
                 </div>
               </div>
